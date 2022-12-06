@@ -1,75 +1,53 @@
 """
 
 
-@author: Joseph Kern@ MABA CLASS
+@author: Joseph Kern
 """
 
 import streamlit as st
 import pandas as pd
-
-import plotly.express as px
+import spacy
+from spacy.lang.en.stop_words import STOP_WORDS
+from spacy import displacy
+import sentence_transformers
+from sentence_transformers import SentenceTransformer, util
+from string import punctuation
+from collections import Counter
+from heapq import nlargest
+from PIL import Image
+import torch
+import pickle as pkl
+from tqdm import tqdm
+import os
 
 
 
 
 
 st.title("Joseph Kern")
-st.markdown("This is a demo Streamlitty app.")
-st.markdown("My name is Hamza, hello world!..")
-st.markdown("This is v2")
-
-@st.cache(persist=True)
-def load_data():
-    df = pd.read_csv("https://datahub.io/machine-learning/iris/r/iris.csv")
-    return(df)
-
+st.markdown("This is Hotel Finder for San Francisco.")
 
 
 def run():
-    st.subheader("Iris Data Loaded into a Pandas Dataframe.")
+    with open("sanfran_df.pkl" , "rb") as file_1, open("sanfran_corpus.pkl" , "rb") as file_2, open("sanfran_corpus_embeddings.pkl" , "rb") as file_3:
+        df = pkl.load(file_1)
+        corpus = pkl.load(file_2)
+        corpus_embeddings = pkl.load(file_3)
 
-    df = load_data()
+    top_k = min(5, len(corpus))
 
+    query_embedding = embedder.encode(query, convert_to_tensor=True)
 
+    cos_scores = util.pytorch_cos_sim(query_embedding, corpus_embeddings)[0]
+    top_results = torch.topk(cos_scores, k=top_k)
 
-    disp_head = st.sidebar.radio('Select DataFrame Display Option:',('Head', 'All'),index=0)
+    st.markdown("\n\n======================\n\n")
+    st.write("Query: ", query)
+    st.write("\nTop 5 most similar hotels:")
 
-
-
-    #Multi-Select
-    #sel_plot_cols = st.sidebar.multiselect("Select Columns For Scatter Plot",df.columns.to_list()[0:4],df.columns.to_list()[0:2])
-
-    #Select Box
-    #x_plot = st.sidebar.selectbox("Select X-axis Column For Scatter Plot",df.columns.to_list()[0:4],index=0)
-    #y_plot = st.sidebar.selectbox("Select Y-axis Column For Scatter Plot",df.columns.to_list()[0:4],index=1)
-
-
-    if disp_head=="Head":
-        st.dataframe(df.head())
-    else:
-        st.dataframe(df)
-    #st.table(df)
-    #st.write(df)
-
-
-    #Scatter Plot
-    fig = px.scatter(df, x=df["sepallength"], y=df["sepalwidth"], color="class",
-                 size='petallength', hover_data=['petalwidth'])
-
-    fig.update_layout({
-                'plot_bgcolor': 'rgba(0, 0, 0, 0)'})
-
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-
-    st.write("\n")
-    st.subheader("Scatter Plot")
-    st.plotly_chart(fig, use_container_width=True)
-
-
-    #Add images
-    #images = ["<image_url>"]
-    #st.image(images, width=600,use_container_width=True, caption=["Iris Flower"])
+    for score, idx in zip(top_results[0], top_results[1]):
+        row_dict = df.loc[df['all_review']== corpus[idx]]
+        st.write("\n\nHotel: ", row_dict['hotel'].values[0])
 
 
 
