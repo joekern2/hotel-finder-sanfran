@@ -22,7 +22,7 @@ import os
 
 
 
-
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
 
 st.title("Joseph Kern")
 st.markdown("This is Hotel Finder for San Francisco.")
@@ -33,6 +33,9 @@ def run():
         df = pkl.load(file_1)
         corpus = pkl.load(file_2)
         corpus_embeddings = pkl.load(file_3)
+
+    query = ''
+    query = st.text_input("Enter what you want from your hotel:")
 
     top_k = min(5, len(corpus))
 
@@ -47,7 +50,7 @@ def run():
 
     for score, idx in zip(top_results[0], top_results[1]):
         row_dict = df.loc[df['all_review']== corpus[idx]]
-        st.write("\n\nHotel: ", row_dict['hotel'].values[0])
+        st.write("\n\nHotel: ", row_dict['Hotel'].values[0])
 
 
 
